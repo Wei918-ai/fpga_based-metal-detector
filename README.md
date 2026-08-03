@@ -30,44 +30,9 @@ The system features onboard DDS excitation generation, 1 MSPS dual-channel ADC s
 ## **2.1 Signal Path**
 
 ```text
-[ DDS PINC Reg ]
-       │
-       ▼
-  [ DDS Core ]
-       │
-       ▼
-   [ xlslice ]
-       │
-       ▼
-  [ MSB Flip ]
-       │
-       ▼
- [ AD9764 DAC ]
-       │
-       ▼
-    [ Op-Amp ]
-       │
-       ▼
-    [ Tx Coil ]
+DDS PINC Reg → DDS Core → xlslice → MSB Flip → AD9764 DAC → Op-Amp → Tx Coil
 
-                               [ PC Host ]
-                                   ▲
-                                   │
-                             lwIP UDP Stack
-                                   ▲
-                                   │
-                               AXI DMA (DDR)
-                                   ▲
-                                   │
-                                 FIFO
-                                   ▲
-                                   │
-                             adc9240_rx
-                                   ▲
-                                   │
-                             AD9240 ADC
-                       (Ch1: Voltage / Ch2: Current)
-```
+AD9240 ADC (Ch1: Voltage / Ch2: Current) → adc9240_rx → FIFO → AXI DMA (DDR) → lwIP UDP → PC Host
 
 ## **2.2 Clock Tree**
 
