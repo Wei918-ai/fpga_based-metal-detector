@@ -31,10 +31,10 @@ The system features onboard DDS excitation generation, **1 MSPS** dual-channel A
 
 ```text
 Transmit (Excitation)
-[DDS PINC Reg] 鈫?[DDS Core] 鈫?[xlslice] 鈫?[MSB Flip] 鈫?[AD9764 DAC] 鈫?[Op-Amp] 鈫?[Tx Coil]
+[DDS PINC Reg] → [DDS Core] → [xlslice] → [MSB Flip] → [AD9764 DAC] → [Op-Amp] → [Tx Coil]
 
 Receive (Acquisition)
-[AD9240 ADC (Ch1: Voltage / Ch2: Current)] 鈫?[adc9240_rx] 鈫?[FIFO] 鈫?[AXI DMA (DDR)] 鈫?[lwIP UDP] 鈫?[PC Host]
+[AD9240 ADC (Ch1: Voltage / Ch2: Current)] → [adc9240_rx] → [FIFO] → [AXI DMA (DDR)] → [lwIP UDP] → [PC Host]
 ```
 
 ## 2.2 Clock Tree
@@ -61,8 +61,8 @@ Receive (Acquisition)
 
 | Bytes | Description |
 |-------|-------------|
-| `0鈥?` | 32-bit Packet Sequence Number (`u32 seq`) |
-| `4鈥?027` | 256 Sample Tuples (1024 Bytes) |
+| 0–3 | 32-bit Packet Sequence Number (`u32 seq`) |
+| 4–1027 | 256 Sample Tuples (1024 Bytes) |
 
 ### DMA Burst Configuration
 
@@ -116,7 +116,7 @@ To guarantee zero packet loss, the firmware implements a lightweight ARQ mechani
 ### Verified Performance
 
 - **LOST = 0**
-- Continuous streaming over **3.63 脳 10^8 samples** without packet loss
+- Continuous streaming over 3.63 × 10^8 samples without packet loss
 
 ## 3.3 Dynamic DDS Frequency Control
 
@@ -139,21 +139,24 @@ This enables real-time DDS frequency tuning without interrupting data acquisitio
 
 ```text
 .
-鈹溾攢鈹€ board_ps/
-鈹?  鈹溾攢鈹€ main.c
-鈹?  鈹溾攢鈹€ dds_stream.c
-鈹?  鈹溾攢鈹€ dds_stream.h
-鈹?  鈹斺攢鈹€ CMakeLists.txt
-鈹?鈹溾攢鈹€ fpga_rtl/
-鈹?  鈹溾攢鈹€ adc9240_rx.v
-鈹?  鈹溾攢鈹€ adc_clk_gen.v
-鈹?  鈹溾攢鈹€ axis_tlast_gen.v
-鈹?  鈹斺攢鈹€ dac_clk_fwd.v
-鈹?鈹溾攢鈹€ constraints/
-鈹?  鈹斺攢鈹€ sensor_full.xdc
-鈹?鈹斺攢鈹€ pc_daq/
-    鈹溾攢鈹€ pc_waveform_dual.py
-    鈹斺攢鈹€ set_freq.py
+├── board_ps/
+│   ├── main.c
+│   ├── dds_stream.c
+│   ├── dds_stream.h
+│   └── CMakeLists.txt
+│
+├── fpga_rtl/
+│   ├── adc9240_rx.v
+│   ├── adc_clk_gen.v
+│   ├── axis_tlast_gen.v
+│   └── dac_clk_fwd.v
+│
+├── constraints/
+│   └── sensor_full.xdc
+│
+└── pc_daq/
+    ├── pc_waveform_dual.py
+    └── set_freq.py
 ```
 
 | Directory | Description |
