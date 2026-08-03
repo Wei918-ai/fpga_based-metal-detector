@@ -2,7 +2,7 @@
 
 A high-speed, dual-channel data acquisition and complex impedance measurement system implemented on the ZedBoard (Xilinx Zynq-7020). 
 
-The system features onboard DDS excitation generation, 1 MSPS dual-channel ADC sampling, a baremetal ring-buffer DMA pipeline, and zero-loss UDP Ethernet streaming with hardware-assisted ARQ.
+The system features onboard DDS excitation generation, 1 MSPS dual-channel ADC sampling, a standalone ring-buffer DMA pipeline, and zero-loss UDP Ethernet streaming with hardware-assisted ARQ.
 
 ---
 
