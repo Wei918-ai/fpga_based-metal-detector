@@ -194,18 +194,15 @@ This allows real-time DDS frequency tuning without interrupting data acquisition
 ├── fpga_rtl/
 │   ├── adc9240_rx.v
 │   ├── adc_clk_gen.v
-│   ├── dac_clk_fwd.v
-│   └── fake_adc.v
+│   └── dac_clk_fwd.v
 │
 ├── constraints/
-│   ├── sensor_full.xdc
-│   └── dac_only.xdc
+│   └── sensor_full.xdc
 │
 └── pc_daq/
     ├── pc_waveform_dual.py
-    ├── check_continuity_dual.py
-    ├── set_freq.py
-    └── pc_recorder.py
+    └── set_freq.py
+
 ```
 
 ### Directory Description
@@ -272,14 +269,3 @@ Example: Set DDS output to **75 kHz**
 python set_freq.py 75000
 ```
 
-### Record Raw Streaming Data
-
-```bash
-python pc_recorder.py
-```
-
-### Verify Packet Continuity
-
-```bash
-python check_continuity_dual.py
-```
