@@ -151,6 +151,12 @@ This enables real-time DDS frequency tuning without interrupting data acquisitio
 │   ├── axis_tlast_gen.v
 │   └── dac_clk_fwd.v
 │
+├── images/
+│   ├── waveform_dual_channel.jpg
+│   ├── Vivado Block Design.jpg
+│   ├── hardware setup.jpg
+│   └── set_freq demo.mp4
+│
 ├── constraints/
 │   └── sensor_full.xdc
 │
