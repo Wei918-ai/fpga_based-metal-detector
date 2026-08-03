@@ -1,4 +1,4 @@
-# FPGA-Based Metal Detection 
+# FPGA-Based Metal Detector
 
 A high-speed, dual-channel data acquisition and complex impedance measurement system implemented on the **ZedBoard (Xilinx Zynq-7020)**.
 
