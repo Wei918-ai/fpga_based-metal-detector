@@ -1,4 +1,4 @@
-# FPGA-Based Metal Detection & Complex Impedance DAQ System
+# FPGA-Based Metal Detection 
 
 A high-speed, dual-channel data acquisition and complex impedance measurement system implemented on the **ZedBoard (Xilinx Zynq-7020)**.
 
