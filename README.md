@@ -1,14 +1,14 @@
 # FPGA-Based Metal Detection & Complex Impedance DAQ System
 
-A high-speed, dual-channel data acquisition and complex impedance measurement system implemented on the ZedBoard (Xilinx Zynq-7020).
+A high-speed, dual-channel data acquisition and complex impedance measurement system implemented on the **ZedBoard (Xilinx Zynq-7020)**.
 
-The system features onboard DDS excitation generation, 1 MSPS dual-channel ADC sampling, a standalone ring-buffer DMA pipeline, and zero-loss UDP Ethernet streaming with hardware-assisted ARQ.
+The system features onboard DDS excitation generation, **1 MSPS** dual-channel ADC sampling, a standalone ring-buffer DMA pipeline, and zero-loss UDP Ethernet streaming with hardware-assisted ARQ.
 
 ---
 
-# **1. System Architecture & Specifications**
+# 1. System Architecture & Specifications
 
-## **1.1 Development Environment**
+## 1.1 Development Environment
 
 - **FPGA / SoC Platform:** Digilent ZedBoard (XC7Z020-CLG484-1)
 - **Design Suite:** AMD Xilinx Vivado 2025.2 / Vitis 2025.2 (SDT Flow)
@@ -16,7 +16,7 @@ The system features onboard DDS excitation generation, 1 MSPS dual-channel ADC s
 - **Network Stack:** lwIP v2.2.0 (UDP)
 - **Host Software:** Python 3.10+ (NumPy / Matplotlib)
 
-## **1.2 Network Configuration**
+## 1.2 Network Configuration
 
 - **ZedBoard IP:** `192.168.1.100`
 - **Host PC IP:** `192.168.1.101`
@@ -25,45 +25,44 @@ The system features onboard DDS excitation generation, 1 MSPS dual-channel ADC s
 
 ---
 
-# **2. Hardware Signal Chain & Clocking**
+# 2. Hardware Signal Chain & Clocking
 
-## **2.1 Signal Path**
+## 2.1 Signal Path
 
 ```text
-DDS PINC Reg → DDS Core → xlslice → MSB Flip → AD9764 DAC → Op-Amp → Tx Coil
+Transmit (Excitation)
+[DDS PINC Reg] 鈫?[DDS Core] 鈫?[xlslice] 鈫?[MSB Flip] 鈫?[AD9764 DAC] 鈫?[Op-Amp] 鈫?[Tx Coil]
 
-AD9240 ADC (Ch1: Voltage / Ch2: Current) → adc9240_rx → FIFO → AXI DMA (DDR) → lwIP UDP → PC Host
+Receive (Acquisition)
+[AD9240 ADC (Ch1: Voltage / Ch2: Current)] 鈫?[adc9240_rx] 鈫?[FIFO] 鈫?[AXI DMA (DDR)] 鈫?[lwIP UDP] 鈫?[PC Host]
+```
 
-## **2.2 Clock Tree**
+## 2.2 Clock Tree
 
 - **FCLK_CLK0:** `100 MHz` (PS Reference Clock)
 - **ADC Clock (`adc_clk`):**
   - Frequency: `1 MHz`
   - Generated inside PL using a counter divider (`DIV = 49`)
-  - Forwarded to pin **E20** through an `ODDR` primitive (`adc_clk_fwd.v`)
+  - Forwarded to physical pin **E20** through an `ODDR` primitive (`adc_clk_fwd.v`)
 - **DAC Clock (`dac_clk`):**
   - Frequency: `100 MHz`
-  - Directly forwarded to pin **M19** via an `ODDR` primitive
+  - Directly forwarded to physical pin **M19** through an `ODDR` primitive
 
-## **2.3 Data Format**
+## 2.3 Data Format
 
 ### Sample Format
 
-Each sample tuple occupies **4 Bytes**:
-
 | Bits | Description |
 |------|-------------|
-| [15:0] | Channel 1 (Voltage), 14-bit left aligned (`<<2`) |
-| [31:16] | Channel 2 (Current), 14-bit left aligned (`<<2`) |
+| `[15:0]` | Channel 1 (Voltage), 14-bit left-aligned (`<<2`) |
+| `[31:16]` | Channel 2 (Current), 14-bit left-aligned (`<<2`) |
 
 ### UDP Packet Format
 
-Each UDP payload contains **1028 Bytes**:
-
 | Bytes | Description |
 |-------|-------------|
-| 0–3 | 32-bit Packet Sequence Number (`u32 seq`) |
-| 4–1027 | 256 Sample Tuples (1024 Bytes) |
+| `0鈥?` | 32-bit Packet Sequence Number (`u32 seq`) |
+| `4鈥?027` | 256 Sample Tuples (1024 Bytes) |
 
 ### DMA Burst Configuration
 
@@ -72,11 +71,11 @@ Each UDP payload contains **1028 Bytes**:
 
 ---
 
-# **3. Core Software & Firmware Design**
+# 3. Core Software & Firmware Design
 
-## **3.1 PS Pipeline Architecture (`dds_stream.c` v5)**
+## 3.1 PS Pipeline Architecture (`dds_stream.c` v5)
 
-The PS firmware runs under the Xilinx Standalone environment using a non-blocking **8-buffer ring queue (RING8)** to maximize throughput without RTOS scheduling overhead.
+The PS firmware runs under the Xilinx Standalone environment using a non-blocking **8-buffer ring queue (RING8)**.
 
 ### Ring Buffer
 
@@ -91,22 +90,20 @@ The PS firmware runs under the Xilinx Standalone environment using a non-blockin
 Upon DMA completion, it:
 
 - Rotates the target buffer
-- Immediately schedules the next DMA transfer
+- Immediately starts the next DMA transfer
 - Returns execution within a few microseconds
 
 ### Cache Coherency
 
-Before packetization, the firmware explicitly calls
+Before packetization, the firmware explicitly calls:
 
 ```c
-Xil_DCacheInvalidateRange()
+Xil_DCacheInvalidateRange();
 ```
 
 to prevent stale cache lines from being transmitted.
 
----
-
-## **3.2 Hardware-Assisted ARQ**
+## 3.2 Hardware-Assisted ARQ
 
 To guarantee zero packet loss, the firmware implements a lightweight ARQ mechanism.
 
@@ -114,22 +111,14 @@ To guarantee zero packet loss, the firmware implements a lightweight ARQ mechani
 
 - Rolling history buffer containing the most recent **2048 packets**
 - 4-byte UDP NACK command (`0x44445301`)
-- Immediate retransmission of missing sequence numbers
+- Immediate retransmission of missing sequence IDs
 
 ### Verified Performance
 
 - **LOST = 0**
-- Continuous streaming over
+- Continuous streaming over **3.63 脳 10^8 samples** without packet loss
 
-\[
-3.63 \times 10^{8}
-\]
-
-samples without packet loss.
-
----
-
-## **3.3 Dynamic DDS Frequency Control**
+## 3.3 Dynamic DDS Frequency Control
 
 The Host PC sends a **12-byte UDP command packet** containing:
 
@@ -138,76 +127,66 @@ The Host PC sends a **12-byte UDP command packet** containing:
 
 The PS firmware:
 
-1. Parses the target frequency
-2. Computes the DDS Phase Increment (`PINC`)
-3. Writes the new value directly to the AXI GPIO register (`0x41200000`)
+1. Parses the target frequency.
+2. Computes the DDS Phase Increment (`PINC`).
+3. Writes the new value to the AXI GPIO register (`0x41200000`).
 
-This allows real-time DDS frequency tuning without interrupting data acquisition.
+This enables real-time DDS frequency tuning without interrupting data acquisition.
 
 ---
 
-# **4. Repository Layout**
+# 4. Repository Layout
 
 ```text
 .
-├── board_ps/
-│   ├── main.c
-│   ├── dds_stream.c
-│   ├── dds_stream.h
-│   └── CMakeLists.txt
-│
-├── fpga_rtl/
-│   ├── adc9240_rx.v
-│   ├── adc_clk_gen.v
-│   └── axis_tlast_gen
-│   └── dac_clk_fwd.v
-│
-├── constraints/
-│   └── sensor_full.xdc
-│
-└── pc_daq/
-    ├── pc_waveform_dual.py
-    └── set_freq.py
-
+鈹溾攢鈹€ board_ps/
+鈹?  鈹溾攢鈹€ main.c
+鈹?  鈹溾攢鈹€ dds_stream.c
+鈹?  鈹溾攢鈹€ dds_stream.h
+鈹?  鈹斺攢鈹€ CMakeLists.txt
+鈹?鈹溾攢鈹€ fpga_rtl/
+鈹?  鈹溾攢鈹€ adc9240_rx.v
+鈹?  鈹溾攢鈹€ adc_clk_gen.v
+鈹?  鈹溾攢鈹€ axis_tlast_gen.v
+鈹?  鈹斺攢鈹€ dac_clk_fwd.v
+鈹?鈹溾攢鈹€ constraints/
+鈹?  鈹斺攢鈹€ sensor_full.xdc
+鈹?鈹斺攢鈹€ pc_daq/
+    鈹溾攢鈹€ pc_waveform_dual.py
+    鈹斺攢鈹€ set_freq.py
 ```
-
-### Directory Description
 
 | Directory | Description |
 |-----------|-------------|
 | **board_ps/** | Bare-metal firmware running on the PS |
 | **fpga_rtl/** | FPGA RTL source code |
 | **constraints/** | Vivado XDC constraint files |
-| **pc_daq/** | Python utilities for acquisition, visualization, and control |
+| **pc_daq/** | Python utilities for acquisition, visualization and control |
 
 ---
 
-# **5. Build & Deployment**
+# 5. Build & Deployment
 
-## **5.1 Hardware Setup**
+## 5.1 Hardware Setup
 
-1. Set ZedBoard boot jumpers **JP9** and **JP10** to **SD Boot Mode (3V3)**.
-2. Copy the generated **BOOT.BIN** to the root directory of a FAT32-formatted SD card.
+1. Set **JP9** and **JP10** to **SD Boot Mode (3V3)**.
+2. Copy **BOOT.BIN** to a FAT32-formatted SD card.
 3. Insert the SD card into the ZedBoard.
-4. Connect the Ethernet cable directly to the Host PC.
-5. Configure the Host PC network:
+4. Connect the Host PC via Ethernet.
+5. Configure the Host PC:
 
-```
+```text
 IP Address : 192.168.1.101
 Subnet Mask: 255.255.255.0
 ```
 
-6. Connect the UART USB cable.
+6. Connect the UART cable.
 
-```
+```text
 Baud Rate: 115200
 ```
 
----
-
-## **5.2 Boot Verification**
-
-After power-up, the UART console should display:
+## 5.2 Boot Verification
 
 ```text
 Board IP: 192.168.1.100
@@ -215,21 +194,15 @@ Board IP: 192.168.1.100
 [dds_stream] gpio readback: 0x00000863
 ```
 
----
+## 5.3 Host PC Operation
 
-## **5.3 Host PC Operation**
-
-Navigate to the `pc_daq/` directory.
-
-### Launch the Real-Time Oscilloscope
+Launch the real-time oscilloscope:
 
 ```bash
 python pc_waveform_dual.py
 ```
 
-### Change DDS Output Frequency
-
-Example: Set DDS output to **75 kHz**
+Set DDS output frequency (example: 75 kHz):
 
 ```bash
 python set_freq.py 75000
