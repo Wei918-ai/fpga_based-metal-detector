@@ -159,6 +159,7 @@ This allows real-time DDS frequency tuning without interrupting data acquisition
 ├── fpga_rtl/
 │   ├── adc9240_rx.v
 │   ├── adc_clk_gen.v
+│   └── axis_tlast_gen
 │   └── dac_clk_fwd.v
 │
 ├── constraints/
